@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CRM JAL2 — Nancy Ramos</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+:root{
+  --azul:#1B3A6B;--naranja:#E8620A;--verde:#16a34a;--amarillo:#ca8a04;--gris:#6b7280;
+  --fondo:#f1f5f9;--rojo:#dc2626;--morado:#9333ea;
+  --frio-bg:#dbeafe;--frio-c:#1e40af;
+  --tibio-bg:#fef3c7;--tibio-c:#92400e;
+  --caliente-bg:#fecaca;--caliente-c:#991b1b;
+  --propuesta-bg:#e9d5ff;--propuesta-c:#6b21a8;
+  --cerrado-bg:#bbf7d0;--cerrado-c:#166534;
+}
+body{background:var(--fondo);min-height:100vh;padding-bottom:30px}
+header{background:var(--azul);color:#fff;padding:11px 14px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.brand{font-size:10px;opacity:.85;letter-spacing:1px}
+h1{font-size:17px;margin-top:2px;font-weight:700}
+.sub{font-size:11px;opacity:.9;margin-top:3px}
+.badge{display:inline-block;background:var(--naranja);padding:2px 9px;border-radius:10px;font-size:11px;font-weight:700;margin-top:4px}
+.tabs{display:flex;background:#fff;border-bottom:2px solid #e5e7eb;position:sticky;top:60px;z-index:9}
+.tab{flex:1;padding:11px 8px;text-align:center;font-size:13px;font-weight:600;cursor:pointer;color:var(--gris);border-bottom:3px solid transparent}
+.tab.on{color:var(--azul);border-bottom-color:var(--naranja);background:#f8fafc}
+.controls{background:#fff;padding:10px;border-bottom:1px solid #e5e7eb;display:flex;flex-direction:column;gap:7px}
+.controls input,.controls select{padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:100%}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.row select{flex:1;min-width:120px}
+.btn{background:var(--azul);color:#fff;border:none;border-radius:6px;padding:9px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.btn-naranja{background:var(--naranja)}
+.btn-verde{background:var(--verde)}
+.btn-rojo{background:var(--rojo)}
+.btn-gris{background:var(--gris)}
+.cadih-bar{background:#fff7ed;border:2px solid var(--naranja);padding:10px;border-radius:8px;margin:8px 10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.cadih-bar .ttl{font-size:13px;font-weight:700;color:var(--azul)}
+.cadih-bar .cnt{font-weight:700;color:var(--naranja);font-size:13px;margin-top:2px}
+.lead{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:11px;margin:8px 10px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.lead-head{display:flex;gap:8px;align-items:flex-start}
+.chk{margin-top:2px}
+.chk input{width:18px;height:18px;cursor:pointer;accent-color:var(--naranja)}
+.lead-info{flex:1;min-width:0}
+.lead-nombre{font-weight:700;color:var(--azul);font-size:14px;margin-bottom:3px;line-height:1.25;word-break:break-word}
+.lead-meta{font-size:11px;color:var(--gris);line-height:1.4}
+.lead-tel{font-weight:700;color:var(--verde);font-size:13px;margin-top:5px}
+.lead-tel .ico{font-size:14px}
+.acciones{display:flex;gap:5px;margin-top:10px}
+.acciones button{flex:1;padding:8px 4px;font-size:11px;border:none;border-radius:6px;font-weight:700;cursor:pointer;color:#fff;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.1}
+.acciones .ico-btn{font-size:14px}
+.bwa{background:#25D366}
+.bhj{background:var(--amarillo)}
+.bnt{background:var(--azul)}
+.status-row{margin-top:10px;display:flex;gap:4px;flex-wrap:wrap}
+.pill{flex:1;min-width:60px;padding:6px 4px;border-radius:14px;border:2px solid transparent;background:#f3f4f6;color:var(--gris);font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s}
+.pill:hover{background:#e5e7eb}
+.pill.on-frio{background:var(--frio-bg);color:var(--frio-c);border-color:var(--frio-c)}
+.pill.on-tibio{background:var(--tibio-bg);color:var(--tibio-c);border-color:var(--tibio-c)}
+.pill.on-caliente{background:var(--caliente-bg);color:var(--caliente-c);border-color:var(--caliente-c)}
+.pill.on-propuesta{background:var(--propuesta-bg);color:var(--propuesta-c);border-color:var(--propuesta-c)}
+.pill.on-cerrado{background:var(--cerrado-bg);color:var(--cerrado-c);border-color:var(--cerrado-c)}
+.hoja-tag{display:inline-block;margin-top:6px;font-size:10px;color:var(--gris)}
+.hoja-tag.si{color:var(--verde);font-weight:700}
+.notas-box{margin-top:9px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:8px;display:none}
+.notas-box.show{display:block}
+.nota-item{background:#fff;border-left:3px solid var(--naranja);padding:6px 8px;margin-bottom:5px;border-radius:4px;font-size:12px;position:relative}
+.nota-fecha{font-size:10px;color:var(--gris);font-weight:700;margin-bottom:2px}
+.nota-texto{color:#1f2937;word-break:break-word;padding-right:22px;line-height:1.35}
+.nota-del{position:absolute;top:4px;right:4px;background:none;border:none;cursor:pointer;color:var(--rojo);font-size:13px;padding:0;width:22px;height:22px;border-radius:50%}
+.nota-del:hover{background:#fee}
+.nota-add{display:flex;gap:5px;margin-top:6px}
+.nota-add textarea{flex:1;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;resize:vertical;min-height:38px;font-family:inherit}
+.nota-add button{background:var(--verde);color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.empty{text-align:center;color:var(--gris);font-size:12px;padding:6px;font-style:italic}
+.no-leads{text-align:center;color:var(--gris);padding:25px;font-size:13px}
+.bottom{padding:14px 10px 30px;text-align:center}
+.bottom button{background:var(--azul);color:#fff;border:none;border-radius:8px;padding:11px 16px;font-size:13px;font-weight:700;cursor:pointer}
+.msg-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin:10px}
+.msg-card .tag{font-size:10px;color:var(--gris);font-weight:700;letter-spacing:1px;margin-bottom:4px}
+.msg-card h3{color:var(--azul);font-size:14px;margin-bottom:8px}
+.msg-card .txt{background:#f1f5f9;padding:10px;border-radius:6px;font-size:12px;line-height:1.5;white-space:pre-wrap;margin-bottom:8px;max-height:200px;overflow-y:auto}
+.msg-card .uso{font-size:11px;color:var(--gris);font-style:italic;margin-top:6px}
+.msg-card button{background:var(--azul);color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal.show{display:flex}
+.modal-content{background:#fff;border-radius:12px;padding:20px;max-width:340px;width:100%;text-align:center}
+.modal-content h3{color:var(--azul);font-size:16px;margin-bottom:10px}
+.modal-content p{font-size:13px;color:#4b5563;margin-bottom:15px}
+.modal-content button{padding:9px 18px;border:none;border-radius:6px;font-weight:700;cursor:pointer;margin:0 4px;font-size:13px}
+.err{background:#fee;color:#c00;padding:10px;border-radius:6px;margin:10px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">CWVL · TU PRÉSTAMO FÁCIL Y SEGURO</div>
+  <h1>CRM JAL2 — Nancy Ramos</h1>
+  <div class="sub">Jalisco · 📱 8113144902 · <span class="badge">200 leads</span></div>
+</header>
+
+<div class="tabs">
+  <div class="tab on" id="t0" onclick="tab(0)">📋 Mis Leads</div>
+  <div class="tab" id="t1" onclick="tab(1)">💬 Mensajes</div>
+</div>
+
+<div id="p0">
+  <div class="controls">
+    <input type="text" id="bq" placeholder="🔍 Buscar por nombre o NSS..." oninput="fil()">
+    <div class="row">
+      <select id="fst" onchange="fil()">
+        <option value="">Todos los status</option>
+        <option value="frio">🔵 Frío</option>
+        <option value="tibio">🟡 Tibio</option>
+        <option value="caliente">🔴 Caliente</option>
+        <option value="propuesta">🟣 Propuesta enviada</option>
+        <option value="cerrado">🟢 Cerrado</option>
+      </select>
+      <select id="fhj" onchange="fil()">
+        <option value="">Hoja amarilla: todos</option>
+        <option value="si">✅ Enviada</option>
+        <option value="no">⏳ Pendiente</option>
+      </select>
+    </div>
+    <select id="fmu" onchange="fil()">
+      <option value="">Todos los municipios</option>
+        <option value="Guadalajara">Guadalajara</option>
+        <option value="San Pedro Tlaquepaque">San Pedro Tlaquepaque</option>
+        <option value="Tlajomulco de Zúñiga">Tlajomulco de Zúñiga</option>
+        <option value="Tonalá">Tonalá</option>
+        <option value="Zapopan">Zapopan</option>
+    </select>
+    <button class="btn btn-gris" onclick="limpia()">✕ Limpiar filtros</button>
+  </div>
+
+  <div class="cadih-bar">
+    <div>
+      <div class="ttl">📥 Lista para CadiH Messenger</div>
+      <div class="cnt"><span id="selCount">0</span> leads seleccionados</div>
+    </div>
+    <div style="display:flex;gap:5px">
+      <button class="btn btn-gris" onclick="selAll()" style="padding:7px 10px">☑️ Todos</button>
+      <button class="btn btn-rojo" onclick="selNone()" style="padding:7px 10px">✕ Ninguno</button>
+      <button class="btn btn-naranja" onclick="exportCadih()" style="padding:7px 10px">📥 Excel</button>
+    </div>
+  </div>
+
+  <div id="errd"></div>
+  <div id="leads"></div>
+
+  <div class="bottom">
+    <button onclick="reporte()">📤 Enviar reporte a Nancy</button>
+  </div>
+</div>
+
+<div id="p1" style="display:none">
+  <div class="msg-card">
+    <div class="tag">MENSAJE 1 · CON ETIQUETA [JAL2]</div>
+    <h3>📣 Primer contacto</h3>
+    <div class="txt" id="m1"></div>
+    <button onclick="copiar(1)">📋 Copiar mensaje</button>
+    <div class="uso">Usar cuando es el primer mensaje al lead</div>
+  </div>
+
+  <div class="msg-card">
+    <div class="tag">MENSAJE 2 · CON ETIQUETA [JAL2]</div>
+    <h3>🔄 Remarketing — No respondió</h3>
+    <div class="txt" id="m2"></div>
+    <button onclick="copiar(2)">📋 Copiar mensaje</button>
+    <div class="uso">Usar cuando el lead no respondió el primer mensaje</div>
+  </div>
+
+  <div class="msg-card">
+    <div class="tag">MENSAJE 3 · CON ETIQUETA [JAL2]</div>
+    <h3>💰 Envío de cotización</h3>
+    <div class="txt" id="m3"></div>
+    <button onclick="copiar(3)">📋 Copiar mensaje</button>
+    <div class="uso">Usar cuando el lead dijo "sí, mándeme información"</div>
+  </div>
+
+  <div class="msg-card">
+    <div class="tag">MENSAJE 4 · CON ETIQUETA [JAL2]</div>
+    <h3>📋 Documentación — Quiere iniciar trámite</h3>
+    <div class="txt" id="m4"></div>
+    <button onclick="copiar(4)">📋 Copiar mensaje</button>
+    <div class="uso">Usar cuando el lead dice "sí quiero iniciar trámite"</div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="mTitle">Mensaje</h3>
+    <p id="mBody">Texto</p>
+    <button class="btn btn-verde" onclick="cerrarModal()" style="color:#fff">OK</button>
+  </div>
+</div>
+
+<script>
+try {
+const LEADS = [{"nss":"54806603319","nombre":"ENRIQUE DOMINGUEZ QUIJAS","curp":"DOQE651105HJCMJN06","edad":61,"municipio":"Guadalajara","whatsapp":"3330107679","fuente":"2026"},{"nss":"54796265665","nombre":"SERGIO TAMAYO HERRERA","curp":"TAHS621106HSRMRR03","edad":62,"municipio":"Guadalajara","whatsapp":"3318085650","fuente":"2025"},{"nss":"54816268921","nombre":"MARTIN JACOBO NEGRETE","curp":"JANM620717HJCCGR01","edad":62,"municipio":"Zapopan","whatsapp":"3323781832","fuente":"2025"},{"nss":"4866140124","nombre":"MA RAMONA OROZCO RODRIGUEZ","curp":"OORR610802MNTRDM09","edad":64,"municipio":"San Pedro Tlaquepaque","whatsapp":"3320280609","fuente":"2025"},{"nss":"4664609874","nombre":"EUTIQUIO HUIZAR BRISENO","curp":"HUBE460820HJCZRT06","edad":78,"municipio":"Guadalajara","whatsapp":"3316449803","fuente":"2025"},{"nss":"4745810210","nombre":"ANGEL MIRAMONTES DIAZ","curp":"MIDA581106HJCRZN05","edad":66,"municipio":"Zapopan","whatsapp":"3312864445","fuente":"2025"},{"nss":"4876551856","nombre":"LETICIA ALVARADO MARIN","curp":"AAML650825MJCLRT03","edad":61,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3325806514","fuente":"2026"},{"nss":"78886517065","nombre":"ILDEFONSO MARCO ANTONIO LOPEZ RAMOS","curp":"LORI651208HOCPML00","edad":61,"municipio":"Zapopan","whatsapp":"3313477521","fuente":"2026"},{"nss":"54816513839","nombre":"ANITA LOPEZ ORTIZ","curp":"LOOA650726MJCPRN05","edad":61,"municipio":"Zapopan","whatsapp":"4775044648","fuente":"2026"},{"nss":"4826578702","nombre":"GUILLERMO RODRIGUEZ LOPEZ","curp":"ROLG650729HJCDPL05","edad":61,"municipio":"Zapopan","whatsapp":"3338157929","fuente":"2026"},{"nss":"54806010010","nombre":"MARTIN TORRES GONZALEZ","curp":"TOGM601225HMNRNR02","edad":64,"municipio":"Zapopan","whatsapp":"3314406639","fuente":"2025"},{"nss":"10725468697","nombre":"GRACIELA TORRES PONCE","curp":"TOPG540514MJCRNR09","edad":71,"municipio":"Zapopan","whatsapp":"3310062994","fuente":"2025"},{"nss":"4886107913","nombre":"EVA RANGEL LOPEZ","curp":"RALE610126MJCNPV02","edad":64,"municipio":"Guadalajara","whatsapp":"3331913239","fuente":"2025"},{"nss":"4816343497","nombre":"ARTURO MARQUEZ LIZARDE","curp":"MALA651218HJCRZR04","edad":61,"municipio":"Zapopan","whatsapp":"3311456972","fuente":"2026"},{"nss":"4704710252","nombre":"ALICIA RAMOS MENDEZ","curp":"RAMA501002MJCMNL08","edad":75,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3355655455","fuente":"2025"},{"nss":"54786065760","nombre":"OLIVIA RODRIGUEZ RUIZ","curp":"RORO600609MJCDZL04","edad":64,"municipio":"Guadalajara","whatsapp":"3331398185","fuente":"2025"},{"nss":"56886527987","nombre":"MA. SELINA ROJAS GOMEZ","curp":"ROGS650806MJCJML02","edad":61,"municipio":"Guadalajara","whatsapp":"5524451579","fuente":"2026"},{"nss":"4735635403","nombre":"ARACELI DEL ROSARIO NOVOA ARIAS","curp":"NOAA560407MJCVRR09","edad":68,"municipio":"Zapopan","whatsapp":"3331676298","fuente":"2025"},{"nss":"54786500956","nombre":"FRANCISCO SANDOVAL MASCORRO","curp":"SAMF651108HJCNSR01","edad":61,"municipio":"San Pedro Tlaquepaque","whatsapp":"3316945433","fuente":"2026"},{"nss":"4826537039","nombre":"VICTOR DOMINGUEZ GARCIA","curp":"DOGV650728HJCMRC08","edad":61,"municipio":"Zapopan","whatsapp":"3314500196","fuente":"2026"},{"nss":"54796221064","nombre":"JOSE MEDINA MIRAMONTES","curp":"MEMJ620418HJCDRS08","edad":63,"municipio":"Guadalajara","whatsapp":"3313306671","fuente":"2025"},{"nss":"75966501217","nombre":"JESUS VILLARRUEL ESCOBEDO","curp":"VIEJ650820HJCLSS03","edad":61,"municipio":"Guadalajara","whatsapp":"3311191440","fuente":"2026"},{"nss":"54806529258","nombre":"CARLOS LOPEZ LOPEZ","curp":"LOLC651231HJCPPR00","edad":61,"municipio":"Guadalajara","whatsapp":"3335067441","fuente":"2026"},{"nss":"54805842074","nombre":"JAVIER PONCE HERNANDEZ","curp":"POHJ580921HZSNRV03","edad":66,"municipio":"Guadalajara","whatsapp":"3310885421","fuente":"2025"},{"nss":"54815905168","nombre":"GRACIELA VILLALOBOS CHAVEZ","curp":"VICG590423MJCLHR00","edad":66,"municipio":"Guadalajara","whatsapp":"3323504044","fuente":"2025"},{"nss":"54835716702","nombre":"GREGORIO GUTIERREZ RAMOS","curp":"GURG571117HJCTMR07","edad":67,"municipio":"Guadalajara","whatsapp":"3332448271","fuente":"2025"},{"nss":"4826519896","nombre":"MARCELINO ROSAS REYES","curp":"RORM651005HJCSYR07","edad":61,"municipio":"Guadalajara","whatsapp":"3314242119","fuente":"2026"},{"nss":"54836223815","nombre":"MARIA FILOMENA VAZQUEZ LOPEZ","curp":"VALF620905MJCZPL01","edad":63,"municipio":"Guadalajara","whatsapp":"3311581725","fuente":"2025"},{"nss":"4846500504","nombre":"ARMANDO * ALVAREZ CHAVEZ","curp":"AACA651108HDFLHR00","edad":61,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3314101845","fuente":"2026"},{"nss":"54846398615","nombre":"MARIA ISABEL DELGADO RAZO","curp":"DERI631120MJCLZS07","edad":61,"municipio":"Guadalajara","whatsapp":"3310686859","fuente":"2025"},{"nss":"4856528411","nombre":"ANA LOPEZ TAMEZ","curp":"LOTA651226MJCPMN02","edad":61,"municipio":"Zapopan","whatsapp":"3318726701","fuente":"2026"},{"nss":"54905516263","nombre":"IGNACIO ESPINOZA LIMON","curp":"EILI550701HJCSMG03","edad":70,"municipio":"Guadalajara","whatsapp":"3338387305","fuente":"2025"},{"nss":"75936502295","nombre":"LEOPOLDO PRIETO VALDEZ","curp":"PIVL651001HJCRLP06","edad":61,"municipio":"Guadalajara","whatsapp":"3310886712","fuente":"2026"},{"nss":"4896524511","nombre":"CORINA DE LA PAZ OCHOA CORTES","curp":"OOCC651010MJCCRR05","edad":61,"municipio":"Zapopan","whatsapp":"3313877120","fuente":"2026"},{"nss":"4856240652","nombre":"ROMULO ALEJANDRO ARANDA PADILLA","curp":"AAPR621115HJCRDM07","edad":62,"municipio":"Guadalajara","whatsapp":"3312772220","fuente":"2025"},{"nss":"4866504568","nombre":"MA OTILIA OROZCO OLIVARES","curp":"OOOO651213MJCRLT05","edad":61,"municipio":"Tonalá","whatsapp":"3311259024","fuente":"2026"},{"nss":"4876509367","nombre":"OLGA LETICIA ALVAREZ JIMENEZ","curp":"AAJO651210MJCLML01","edad":61,"municipio":"Zapopan","whatsapp":"3313562626","fuente":"2026"},{"nss":"54836406741","nombre":"GUILLERMINA ROBLES SILVA","curp":"ROSG640625MJCBLL07","edad":60,"municipio":"Zapopan","whatsapp":"3335590474","fuente":"2025"},{"nss":"4856537008","nombre":"JOSE ANTONIO CORTES MORONES","curp":"COMA650809HJCRRN07","edad":61,"municipio":"Guadalajara","whatsapp":"3313072782","fuente":"2026"},{"nss":"43786049387","nombre":"ANGEL MARIO GARZA SALAZAR","curp":"GASA600201HNLRLN07","edad":65,"municipio":"Tonalá","whatsapp":"3310060660","fuente":"2025"},{"nss":"54815403172","nombre":"JUAN JOSE LOPEZ SALAZAR","curp":"LOSJ540321HASPLN01","edad":71,"municipio":"Guadalajara","whatsapp":"3333787572","fuente":"2025"},{"nss":"4886544537","nombre":"AURORA LUCIA TAFOYA BECERRA","curp":"TABA650820MJCFCR09","edad":61,"municipio":"Zapopan","whatsapp":"3310478689","fuente":"2026"},{"nss":"54836563202","nombre":"ANGELICA FLORES SOTO","curp":"FOSA650810MJCLTN09","edad":61,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3317554830","fuente":"2026"},{"nss":"54785503027","nombre":"MARIA ESPERANZA MOTA GARCIA","curp":"MOGE550807MJCTRS07","edad":69,"municipio":"Guadalajara","whatsapp":"3326251529","fuente":"2025"},{"nss":"4816349643","nombre":"JOSE ANDRADE MARRON","curp":"AAMJ631007HMNNRS03","edad":61,"municipio":"Guadalajara","whatsapp":"3335696001","fuente":"2025"},{"nss":"54836501004","nombre":"HECTOR CASTA#EDA CASTELLANOS","curp":"CACH651207HNTSSC07","edad":61,"municipio":"Zapopan","whatsapp":"3329716632","fuente":"2026"},{"nss":"1765548571","nombre":"MIGUEL ANGEL MERINO CALDERON","curp":"MECM550709HDFRLG02","edad":69,"municipio":"Guadalajara","whatsapp":"1232132131","fuente":"2025"},{"nss":"4755753490","nombre":"MANUEL VELA SANCHEZ","curp":"VESM570629HJCLNN07","edad":67,"municipio":"San Pedro Tlaquepaque","whatsapp":"3310631545","fuente":"2025"},{"nss":"4866518063","nombre":"JOSE GUADALUPE ELIAS HERMOSILLO","curp":"EIHG650903HJCLRD08","edad":61,"municipio":"Guadalajara","whatsapp":"3312436576","fuente":"2026"},{"nss":"4755321322","nombre":"ARTURO AMBRIZ OROZCO","curp":"AIOA540710HDFMRR02","edad":70,"municipio":"Guadalajara","whatsapp":"3338089752","fuente":"2025"},{"nss":"4886114497","nombre":"HERMINIA BERENICE HERNANDEZ GUTIERREZ","curp":"HEGH610718MJCRTR04","edad":63,"municipio":"Guadalajara","whatsapp":"3329155896","fuente":"2025"},{"nss":"4856500725","nombre":"MA. MARGARITA GASPAR NU#O","curp":"GANM651017MJCSXR04","edad":61,"municipio":"San Pedro Tlaquepaque","whatsapp":"3314515900","fuente":"2026"},{"nss":"24855901443","nombre":"NOEMI ACOSTA BORDAS","curp":"AOBN591210MSRCRM08","edad":65,"municipio":"Guadalajara","whatsapp":"3334590059","fuente":"2025"},{"nss":"55836113161","nombre":"MARIA TERESA PEREZ GAYTAN","curp":"PEGT610809MJCRYR07","edad":63,"municipio":"Guadalajara","whatsapp":"3311587371","fuente":"2025"},{"nss":"4906543964","nombre":"ALMA ROSA DE LA CRUZ HUERTA","curp":"CUHA651002MJCRRL00","edad":61,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3334945882","fuente":"2026"},{"nss":"72816513211","nombre":"TAURINO SOLANO TOLENTINO","curp":"SOTT650811HGRLLR08","edad":61,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3311846016","fuente":"2026"},{"nss":"4745511917","nombre":"FRANCISCO JAVIER SOSA GONZALEZ","curp":"SOGF550814HZSSNR00","edad":69,"municipio":"Guadalajara","whatsapp":"3311972050","fuente":"2025"},{"nss":"54796241633","nombre":"ROBERTO LOPEZ MENDOZA","curp":"LOMR620402HJCPNB07","edad":63,"municipio":"Guadalajara","whatsapp":"3337238273","fuente":"2025"},{"nss":"56876526759","nombre":"RAMON CORRAL HERNANDEZ","curp":"COHR651117HJCRRM03","edad":61,"municipio":"Guadalajara","whatsapp":"3314112602","fuente":"2026"},{"nss":"4886517426","nombre":"CECILIA BEAS LOZANO","curp":"BELC650719MJCSZC05","edad":61,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3339458421","fuente":"2026"},{"nss":"54805826069","nombre":"RAQUEL GONZALEZ RUBIO","curp":"GORR580307MJCNBQ08","edad":66,"municipio":"Guadalajara","whatsapp":"3335595120","fuente":"2025"},{"nss":"54846548409","nombre":"GREGORIO FLORES DELGADO","curp":"FODG651117HJCLLR08","edad":61,"municipio":"San Pedro Tlaquepaque","whatsapp":"3334777473","fuente":"2026"},{"nss":"4695140816","nombre":"DAVID ELIAS LECHUGA","curp":"EILD511206HZSLCV09","edad":73,"municipio":"San Pedro Tlaquepaque","whatsapp":"3311843461","fuente":"2025"},{"nss":"54845831251","nombre":"PEDRO CORONA CAMPECHANO","curp":"COCP580629HJCRMD08","edad":66,"municipio":"Tonalá","whatsapp":"3334094136","fuente":"2025"},{"nss":"54796077458","nombre":"JOSE HUGO SILVA AREVALO","curp":"SIAH600108HJCLRG04","edad":64,"municipio":"Zapopan","whatsapp":"3322717431","fuente":"2025"},{"nss":"56916500442","nombre":"JOSE MARTIN CERVANTES MALDONADO","curp":"CEMM651112HJCRLR05","edad":61,"municipio":"Guadalajara","whatsapp":"3323507994","fuente":"2026"},{"nss":"65025502322","nombre":"MARGARITA GUTIERREZ HERRERA","curp":"GUHM550129MJCTRR09","edad":70,"municipio":"Guadalajara","whatsapp":"3312401099","fuente":"2025"},{"nss":"4856577947","nombre":"ALICIA DE LA ROSA MARTINEZ","curp":"ROMA651206MJCSRL01","edad":61,"municipio":"Tonalá","whatsapp":"3337279903","fuente":"2026"},{"nss":"54826550417","nombre":"ALFONSO I#IGUEZ AGUILAR","curp":"IIAA650917HJCXGL01","edad":61,"municipio":"Guadalajara","whatsapp":"3319059785","fuente":"2026"},{"nss":"4845712233","nombre":"GUILLERMINA HIGAREDA DE SALES","curp":"HISG570210MJCGLL03","edad":67,"municipio":"San Pedro Tlaquepaque","whatsapp":"3317594156","fuente":"2025"},{"nss":"74925801529","nombre":"ANGELINA CISNEROS VALDOVINOS","curp":"CIVA581011MMNSLN05","edad":66,"municipio":"Zapopan","whatsapp":"3316720429","fuente":"2025"},{"nss":"4875920334","nombre":"BALTAZAR MACIAS ARCEO","curp":"MAAB590125HJCCRL00","edad":66,"municipio":"Guadalajara","whatsapp":"3318342861","fuente":"2025"},{"nss":"54816586074","nombre":"MANUEL VALENCIA MAGA#A","curp":"VAMM650803HMNLGN02","edad":61,"municipio":"Guadalajara","whatsapp":"3333906930","fuente":"2026"},{"nss":"4856500519","nombre":"MARIA DEL REFUGIO LANDEROS OROZCO","curp":"LAOR651225MDFNRF05","edad":61,"municipio":"Zapopan","whatsapp":"3336777556","fuente":"2026"},{"nss":"4896303064","nombre":"MARIA DEL CARMEN PLASCENCIA BECERRA","curp":"PABC630707MJCLCR05","edad":61,"municipio":"San Pedro Tlaquepaque","whatsapp":"3314622805","fuente":"2025"},{"nss":"4826594139","nombre":"JORGE ALBERTO * GUTIERREZ OROPEZA","curp":"GUOJ651001HJCTRR03","edad":61,"municipio":"Zapopan","whatsapp":"3314982536","fuente":"2026"},{"nss":"4896305291","nombre":"GUMERZINDA DIAZ MENDOZA","curp":"DIMG631221MSRZNM07","edad":61,"municipio":"Guadalajara","whatsapp":"3223503044","fuente":"2025"},{"nss":"54846509021","nombre":"FRANCISCO JAVIER GALINDO VILLANUEVA","curp":"GAVF650816HJCLLR00","edad":61,"municipio":"Guadalajara","whatsapp":"3313524010","fuente":"2026"},{"nss":"6866502484","nombre":"SAMUEL FRANCISCO * RAMIREZ OCARIZ","curp":"RAOS651102HDFMCM00","edad":61,"municipio":"Zapopan","whatsapp":"3316003933","fuente":"2026"},{"nss":"54826193283","nombre":"ANTONIO MURILLO FLORES","curp":"MUFA610314HJCRLN07","edad":64,"municipio":"San Pedro Tlaquepaque","whatsapp":"3334445649","fuente":"2025"},{"nss":"4876531015","nombre":"IRMA LETICIA ROSALES GARCIA","curp":"ROGI650924MJCSRR09","edad":61,"municipio":"Tonalá","whatsapp":"3316974287","fuente":"2026"},{"nss":"54816008947","nombre":"JAVIER GONZALEZ VIATRIZ","curp":"GOVJ600806HJCNTV02","edad":64,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3338287895","fuente":"2025"},{"nss":"4745210171","nombre":"VICTOR MANUEL CURENO MEZA","curp":"CUMV521102HJCRZC07","edad":73,"municipio":"Guadalajara","whatsapp":"3311716567","fuente":"2025"},{"nss":"54816276551","nombre":"DAVID MARTINEZ MORA","curp":"MAMD620808HJCRRV08","edad":62,"municipio":"Guadalajara","whatsapp":"3334551473","fuente":"2025"},{"nss":"54786156361","nombre":"LOURDES ESPERANZA ARCE CORTES","curp":"AECL610211MJCRRR00","edad":64,"municipio":"Guadalajara","whatsapp":"3322311845","fuente":"2025"},{"nss":"23896507748","nombre":"JOSE CARLOS DOMINGUEZ SANCHEZ","curp":"DOSC651212HSLMNR05","edad":61,"municipio":"Zapopan","whatsapp":"3334837632","fuente":"2026"},{"nss":"55846513756","nombre":"PATRICIA GONZALEZ NUNGARAY","curp":"GONP651215MNTNNT07","edad":61,"municipio":"Guadalajara","whatsapp":"3112203034","fuente":"2026"},{"nss":"4654814914","nombre":"ARTURO CAMACHO RIZO","curp":"CARA480425HJCMZR08","edad":77,"municipio":"Zapopan","whatsapp":"3326753863","fuente":"2025"},{"nss":"75965700380","nombre":"REBECA ESTRADA COLIN","curp":"EACR570410MMCSLB07","edad":67,"municipio":"Zapopan","whatsapp":"3313666605","fuente":"2025"},{"nss":"54785935716","nombre":"PATRICIA ROJO NAVARRO","curp":"RONP590812MMNJVT09","edad":65,"municipio":"San Pedro Tlaquepaque","whatsapp":"3316011993","fuente":"2025"},{"nss":"4866504527","nombre":"JOSEFINA GOMEZ CRUZ","curp":"GOCJ650827MJCMRS00","edad":61,"municipio":"Guadalajara","whatsapp":"3312153655","fuente":"2026"},{"nss":"4856578648","nombre":"GUILLERMINA VENTURA RAMOS","curp":"VERG650918MJCNML01","edad":61,"municipio":"San Pedro Tlaquepaque","whatsapp":"3328116336","fuente":"2026"},{"nss":"4856140753","nombre":"PEDRO GONZALEZ LAMBAREN","curp":"GOLP610629HJCNMD04","edad":63,"municipio":"Guadalajara","whatsapp":"3318099938","fuente":"2025"},{"nss":"54786011681","nombre":"MARIA LUISA RUIZ SEGURA","curp":"RUSL600907MDFZGS06","edad":64,"municipio":"Guadalajara","whatsapp":"3310641376","fuente":"2025"},{"nss":"54815825564","nombre":"SIXTO JOEL SEVILLA","curp":"SEXS580921HJCVXX00","edad":66,"municipio":"Guadalajara","whatsapp":"3336090140","fuente":"2025"},{"nss":"54836552346","nombre":"FERNANDO ORTIZ BARRETO","curp":"OIBF651002HJCRRR07","edad":61,"municipio":"Guadalajara","whatsapp":"3311934860","fuente":"2026"},{"nss":"4876545387","nombre":"MARIA ELENA LOMELI HERNANDEZ","curp":"LOHE650815MJCMRL07","edad":61,"municipio":"Guadalajara","whatsapp":"3313046705","fuente":"2026"},{"nss":"11875200815","nombre":"TOMAS DAVID MARTINEZ ROSALES","curp":"MART521120HDFRSM08","edad":72,"municipio":"Zapopan","whatsapp":"3338343269","fuente":"2025"},{"nss":"4895204990","nombre":"ALMA ROSA GALINDO CASTELLANOS","curp":"GACA530825MMNLSL06","edad":71,"municipio":"Zapopan","whatsapp":"3331732517","fuente":"2025"},{"nss":"4886524562","nombre":"JOSE SACRAMENTO ZAVALA JIMENEZ","curp":"ZAJS650907HJCVMC07","edad":61,"municipio":"Guadalajara","whatsapp":"3315128856","fuente":"2026"},{"nss":"54805718860","nombre":"MA DE LOS ANGELES CAMPOS RUIZ","curp":"CARA571115MZSMZN02","edad":67,"municipio":"Guadalajara","whatsapp":"3336570552","fuente":"2025"},{"nss":"4976500803","nombre":"MIGUEL ANGEL SOSA AZUELA","curp":"SOAM650706HJCSZG05","edad":61,"municipio":"Zapopan","whatsapp":"3311182140","fuente":"2026"},{"nss":"53896500666","nombre":"HILDEBERTO PE#ALOZA MU#OZ","curp":"PEMH651218HGRXXL07","edad":61,"municipio":"Zapopan","whatsapp":"3334481133","fuente":"2026"},{"nss":"54786057718","nombre":"ANTONIA GONZALEZ HERNANDEZ","curp":"GOHA611115MASNRN04","edad":63,"municipio":"Guadalajara","whatsapp":"3334563975","fuente":"2025"},{"nss":"4916542188","nombre":"CARLOS ERNESTO RUBIO GARAY","curp":"RUGC651205HJCBRR03","edad":61,"municipio":"Zapopan","whatsapp":"3312370583","fuente":"2026"},{"nss":"54836544251","nombre":"MA ESTHER BELTRAN AGUI#AGA","curp":"BEAE650701MJCLGS02","edad":61,"municipio":"Guadalajara","whatsapp":"3338079397","fuente":"2026"},{"nss":"4876140361","nombre":"MARIO BANUELOS BANUELOS","curp":"BABM610917HJCXXR06","edad":63,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3334497936","fuente":"2025"},{"nss":"1795826864","nombre":"ROSA ELENA GUTIERREZ HERRERA","curp":"GUHR580718MJCTRS00","edad":66,"municipio":"Guadalajara","whatsapp":"3316072018","fuente":"2025"},{"nss":"54846034848","nombre":"MIGUEL NAVARRO HERNANDEZ","curp":"NAHM600817HJCVRG08","edad":64,"municipio":"Guadalajara","whatsapp":"3314363629","fuente":"2025"},{"nss":"4915806865","nombre":"MA GUADALUPE HERNANDEZ NAVA","curp":"HENG560212MJCRVD02","edad":68,"municipio":"Zapopan","whatsapp":"3315272628","fuente":"2025"},{"nss":"54766202029","nombre":"PEDRO GARCIA GUZMAN","curp":"GAGP620629HJCRZD05","edad":62,"municipio":"San Pedro Tlaquepaque","whatsapp":"3337210158","fuente":"2025"},{"nss":"4115701825","nombre":"MARIA DE JESUS ROMO PLASCENCIA","curp":"ROPJ570730MJCMLS00","edad":67,"municipio":"Guadalajara","whatsapp":"3324426557","fuente":"2025"},{"nss":"4896559095","nombre":"CARLOS GARCIA ZAVALA","curp":"GAZC650814HJCRVR00","edad":61,"municipio":"Zapopan","whatsapp":"3318928167","fuente":"2026"},{"nss":"54826595354","nombre":"CRISTINA CAMACHO TORRES","curp":"CATC650708MJCMRR09","edad":61,"municipio":"Tonalá","whatsapp":"3314531429","fuente":"2026"},{"nss":"54805765978","nombre":"CESAR EDUARDO SEPULVEDA RENTERIA","curp":"SERC580125HJCPNS02","edad":67,"municipio":"San Pedro Tlaquepaque","whatsapp":"3315582791","fuente":"2025"},{"nss":"54815809394","nombre":"YOLANDA DAVILA TRINIDAD","curp":"DATY580620MZSVRL04","edad":66,"municipio":"Tonalá","whatsapp":"3336908278","fuente":"2025"},{"nss":"54784502665","nombre":"FELICIANA HERNANDEZ CRUZ","curp":"HECF450609MJCRRL05","edad":79,"municipio":"Guadalajara","whatsapp":"3336086126","fuente":"2025"},{"nss":"54795906756","nombre":"JOSE LUIS LOPEZ GUTIERREZ","curp":"LOGL590307HJCPTS05","edad":65,"municipio":"Guadalajara","whatsapp":"3318971655","fuente":"2025"},{"nss":"4745435042","nombre":"DAVID RODRIGUEZ LOYOLA","curp":"ROLD541229HJCDYV01","edad":70,"municipio":"Zapopan","whatsapp":"6642408650","fuente":"2025"},{"nss":"54826579374","nombre":"MARTIN GONZALEZ CERVANTEZ","curp":"GOCM650812HJCNRR08","edad":61,"municipio":"Zapopan","whatsapp":"3331710786","fuente":"2026"},{"nss":"4826572390","nombre":"RICARDO ANTONIO VILLALON SANCHEZ","curp":"VISR651030HDFLNC03","edad":61,"municipio":"Guadalajara","whatsapp":"3310201456","fuente":"2026"},{"nss":"54846502398","nombre":"SERGIO ARTURO LOPEZ AGUILAR","curp":"LOAS650911HJCPGR06","edad":61,"municipio":"San Pedro Tlaquepaque","whatsapp":"3329190412","fuente":"2026"},{"nss":"54846552765","nombre":"JOSE CRUZ ZU#IGA RODRIGUEZ","curp":"ZURC650917HJCXDR09","edad":61,"municipio":"Zapopan","whatsapp":"3314274064","fuente":"2026"},{"nss":"54816526054","nombre":"ENRIQUE ORTIZ ESPINOSA","curp":"OIEE651027HJCRSN00","edad":61,"municipio":"San Pedro Tlaquepaque","whatsapp":"3338314762","fuente":"2026"},{"nss":"54806291552","nombre":"MARIA ERENDIRA ORTIZ ALVAREZ","curp":"OIAE620514MCLRLR09","edad":63,"municipio":"Guadalajara","whatsapp":"3222053381","fuente":"2025"},{"nss":"54786026283","nombre":"MARTHA ALICIA PIZANO MORENO","curp":"PIMM601107MJCZRR07","edad":64,"municipio":"Zapopan","whatsapp":"3336273196","fuente":"2025"},{"nss":"11896508956","nombre":"LUIS CARLOS MARTINEZ RAMOS","curp":"MARL650801HVZRMS04","edad":61,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3314118107","fuente":"2026"},{"nss":"4856522950","nombre":"IRMA DEL CARMEN DE LA VEGA ROMERO","curp":"VERI651005MJCGMR09","edad":61,"municipio":"Zapopan","whatsapp":"3339564149","fuente":"2026"},{"nss":"54816517889","nombre":"RAMON CARRILLO HERNANDEZ","curp":"CAHR650812HZSRRM07","edad":61,"municipio":"Zapopan","whatsapp":"3328180423","fuente":"2026"},{"nss":"4886513755","nombre":"IGNACIO ANDRADE FIGUEROA","curp":"AAFI650826HJCNGG01","edad":61,"municipio":"Guadalajara","whatsapp":"3321441006","fuente":"2026"},{"nss":"4966500284","nombre":"RAFAEL HERNANDEZ OROZCO","curp":"HEOR650901HJCRRF01","edad":61,"municipio":"Guadalajara","whatsapp":"3335041016","fuente":"2026"},{"nss":"4886541764","nombre":"SALVADOR CASTA#EDA SORIA","curp":"CASS651030HJCSRL03","edad":61,"municipio":"Guadalajara","whatsapp":"3317900093","fuente":"2026"},{"nss":"4876506710","nombre":"JOSE DE JESUS ORNELAS SANDOVAL","curp":"OESJ650909HJCRNS04","edad":61,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3321930205","fuente":"2026"},{"nss":"4755714906","nombre":"J ENCARNACION SUAREZ SANCHEZ","curp":"SUSE570325HJCRNN06","edad":68,"municipio":"San Pedro Tlaquepaque","whatsapp":"3325453864","fuente":"2025"},{"nss":"4816416715","nombre":"AUDON ARIAS NAVARRO","curp":"AINA641022HJCRVD02","edad":60,"municipio":"Tonalá","whatsapp":"6671324455","fuente":"2025"},{"nss":"6664820955","nombre":"MAGDALENA SONIA CAMACHO ROMERO","curp":"CARM470722MDFMMG01","edad":77,"municipio":"San Pedro Tlaquepaque","whatsapp":"3320827572","fuente":"2025"},{"nss":"4866535406","nombre":"PEDRO MARES GUTIERREZ","curp":"MAGP651012HGTRTD02","edad":61,"municipio":"Tonalá","whatsapp":"3310677053","fuente":"2026"},{"nss":"53725106024","nombre":"ROBERTO LUA TOMAS","curp":"LUTR500104HMNXMB09","edad":75,"municipio":"San Pedro Tlaquepaque","whatsapp":"3311385236","fuente":"2025"},{"nss":"4915813945","nombre":"MARGARITA GONZALEZ RUIZ","curp":"GORM580827MJCNZR00","edad":66,"municipio":"Guadalajara","whatsapp":"3310931668","fuente":"2025"},{"nss":"54836500345","nombre":"FILIBERTO MARTINEZ MEDINA","curp":"MAMF650910HJCRDL03","edad":61,"municipio":"Tonalá","whatsapp":"3314244162","fuente":"2026"},{"nss":"54846563325","nombre":"MARTHA DIAZ CORONA","curp":"DICM651109MJCZRR08","edad":61,"municipio":"Tonalá","whatsapp":"3333396770","fuente":"2026"},{"nss":"21806323263","nombre":"CESAR GARCIA CHONQUIT","curp":"GACC631030HBCRHS05","edad":61,"municipio":"Guadalajara","whatsapp":"3333066068","fuente":"2025"},{"nss":"75936500125","nombre":"LEOPOLDO MAYORGA MICHEL","curp":"MAML650721HJCYCP00","edad":61,"municipio":"Guadalajara","whatsapp":"3334897388","fuente":"2026"},{"nss":"56966501480","nombre":"GUILLERMINA ZARAGOZA VARGAS","curp":"ZAVG651120MJCRRL02","edad":61,"municipio":"Tonalá","whatsapp":"3312293778","fuente":"2026"},{"nss":"4826576193","nombre":"REYNALDO MORA VELIZ","curp":"MOVR651031HJCRLY07","edad":61,"municipio":"Tonalá","whatsapp":"3315328519","fuente":"2026"},{"nss":"4866504196","nombre":"ESPERANZA CANO ALVARADO","curp":"CAAE651201MJCNLS05","edad":61,"municipio":"Guadalajara","whatsapp":"3321330918","fuente":"2026"},{"nss":"4806344976","nombre":"JOSE LUIS LOPEZ RICO","curp":"LORL630611HJCPCS00","edad":61,"municipio":"San Pedro Tlaquepaque","whatsapp":"3312301403","fuente":"2025"},{"nss":"56946600865","nombre":"GLORIA AVELINA PULIDO SOSA","curp":"PUSG651208MJCLSL01","edad":61,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3339454559","fuente":"2026"},{"nss":"4876530587","nombre":"AMPARO CASTILLO VAZQUEZ","curp":"CAVA651105MJCSZM09","edad":61,"municipio":"Zapopan","whatsapp":"3333197566","fuente":"2026"},{"nss":"54846556196","nombre":"SALOMON NE CABALLERO TORRES","curp":"CATS650826HMNBRL00","edad":61,"municipio":"San Pedro Tlaquepaque","whatsapp":"3322755485","fuente":"2026"},{"nss":"54846078431","nombre":"JOSE DE JESUS PEREZ GARCIA","curp":"PEGJ601129HJCRRS05","edad":64,"municipio":"Zapopan","whatsapp":"3336710186","fuente":"2025"},{"nss":"54816039538","nombre":"GLORIA LLAMAS SUAREZ","curp":"LASG600616MJCLRL03","edad":64,"municipio":"Zapopan","whatsapp":"3318321752","fuente":"2025"},{"nss":"4866528849","nombre":"MARTINA ALVARADO MEDINA","curp":"AAMM650813MZSLDR01","edad":61,"municipio":"Zapopan","whatsapp":"3310881881","fuente":"2026"},{"nss":"54836518362","nombre":"RAUL GONZALEZ SANCHEZ","curp":"GOSR651007HJCNNL08","edad":61,"municipio":"Zapopan","whatsapp":"3312809590","fuente":"2026"},{"nss":"54846532254","nombre":"JOSE LUIS OCHOA LUNA","curp":"OOLL650805HGRCNS07","edad":61,"municipio":"Zapopan","whatsapp":"3325258054","fuente":"2026"},{"nss":"4816500138","nombre":"ELSA BERENICE MARTINEZ BAUMBACH","curp":"MABE651006MDFRML05","edad":61,"municipio":"Zapopan","whatsapp":"3339551666","fuente":"2026"},{"nss":"4876514862","nombre":"MARIA SOFIA PINEDA VILLEGAS","curp":"PIVS650917MJCNLF03","edad":61,"municipio":"Guadalajara","whatsapp":"3322536368","fuente":"2026"},{"nss":"4866524962","nombre":"JOSE BLAS GARCIA LEA#OS","curp":"GALB650820HJCRXL04","edad":61,"municipio":"Guadalajara","whatsapp":"3338426189","fuente":"2026"},{"nss":"4886970005","nombre":"ENRIQUE RAMOS REGALADO","curp":"RARE610709HJCMGN09","edad":63,"municipio":"Tonalá","whatsapp":"3322052556","fuente":"2025"},{"nss":"54805917777","nombre":"JUAN MARTIN ENCISO VILLASENOR","curp":"EIVJ590724HJCNLN06","edad":65,"municipio":"Guadalajara","whatsapp":"3326478832","fuente":"2025"},{"nss":"4876528136","nombre":"ANA SILVIA BA#UELOS SANDOVAL","curp":"BASA650720MJCXNN00","edad":61,"municipio":"Zapopan","whatsapp":"3320538614","fuente":"2026"},{"nss":"64816430538","nombre":"MARTIN HUMBERTO BALBUENA MEDRANO","curp":"BAMM640414HPLLDR09","edad":61,"municipio":"Zapopan","whatsapp":"3321771962","fuente":"2025"},{"nss":"54816398769","nombre":"LAURA MARCELA ALVAREZ TOSTADO MUZQUIZ","curp":"AAML651126MJCLZR03","edad":61,"municipio":"Zapopan","whatsapp":"3311329376","fuente":"2026"},{"nss":"54806200348","nombre":"YOLANDA RODRIGUEZ ROMERO","curp":"RORY620618MJCDML03","edad":62,"municipio":"Zapopan","whatsapp":"3314682510","fuente":"2025"},{"nss":"4876511280","nombre":"ERNESTO MACIAS ORTIZ","curp":"MAOE650819HJCCRR09","edad":61,"municipio":"Guadalajara","whatsapp":"3334005996","fuente":"2026"},{"nss":"54814902307","nombre":"MARIO CASTANEDA CASTRO","curp":"CACM491028HSRSSR03","edad":75,"municipio":"Zapopan","whatsapp":"3339025583","fuente":"2025"},{"nss":"4876541774","nombre":"ROGELIO AGUILAR BEDOY","curp":"AUBR650916HJCGDG04","edad":61,"municipio":"Tonalá","whatsapp":"3311871785","fuente":"2026"},{"nss":"4936501768","nombre":"OFELIA VARGAS PONCE","curp":"VAPO651122MJCRNF05","edad":61,"municipio":"Zapopan","whatsapp":"3310262042","fuente":"2026"},{"nss":"75956503058","nombre":"ALBERTO DOMINGUEZ CASILLAS","curp":"DOCA650806HJCMSL08","edad":61,"municipio":"Zapopan","whatsapp":"3331071564","fuente":"2026"},{"nss":"4735002927","nombre":"ROSA GARCIA","curp":"GAXR491026MJCRXS05","edad":75,"municipio":"San Pedro Tlaquepaque","whatsapp":"3318666859","fuente":"2025"},{"nss":"54806005531","nombre":"LAURA TOPETE FELIX","curp":"TOFL601019MJCPLR04","edad":64,"municipio":"Guadalajara","whatsapp":"3334959583","fuente":"2025"},{"nss":"54816598046","nombre":"JUAN MANUEL RUIZ GARCIA","curp":"RUGJ650904HJCZRN02","edad":61,"municipio":"Guadalajara","whatsapp":"3333617534","fuente":"2026"},{"nss":"54816207598","nombre":"JOSE LUIS CEBALLOS VALLEJO","curp":"CEVL620514HJCBLS01","edad":63,"municipio":"Guadalajara","whatsapp":"3314253796","fuente":"2025"},{"nss":"4745528218","nombre":"VICENTE MORA PEREZ","curp":"MOPV550405HJCRRC00","edad":70,"municipio":"Tonalá","whatsapp":"3312226681","fuente":"2025"},{"nss":"54846207212","nombre":"MARTHA LAURA LLAMAS SOTELO","curp":"LASM610113MZSLTR02","edad":64,"municipio":"Guadalajara","whatsapp":"3314182666","fuente":"2025"},{"nss":"54846511274","nombre":"CLAUDIA GONZALEZ DE LA MORA","curp":"GOMC650710MJCNRL08","edad":61,"municipio":"Zapopan","whatsapp":"3313381608","fuente":"2026"},{"nss":"54806350739","nombre":"J CARMEN RIVERA RAMIREZ","curp":"RIRC630816HMNVMR07","edad":61,"municipio":"Tonalá","whatsapp":"3320222356","fuente":"2025"},{"nss":"54816335910","nombre":"MARIA DEL CARMEN ADOLFINA GALICIA GUZMAN","curp":"GAGC630927MPLLZR04","edad":61,"municipio":"Zapopan","whatsapp":"3320958464","fuente":"2025"},{"nss":"4745765133","nombre":"HECTOR RIOS ENRIQUEZ","curp":"RIEH570531HJCSNC02","edad":68,"municipio":"Zapopan","whatsapp":"3331590909","fuente":"2025"},{"nss":"4895902742","nombre":"MARIA ESTHELA RODRIGUEZ MORENO","curp":"ROME590103MSLDRS05","edad":66,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3315459428","fuente":"2025"},{"nss":"4896523026","nombre":"MARIA VAZQUEZ CORTES","curp":"VACM650816MJCZRR04","edad":61,"municipio":"Guadalajara","whatsapp":"3321651076","fuente":"2026"},{"nss":"4886508052","nombre":"BERTHA ALICIA VELAZQUEZ RODRIGUEZ","curp":"VERB651014MJCLDR04","edad":61,"municipio":"Tonalá","whatsapp":"3322220969","fuente":"2026"},{"nss":"4826504898","nombre":"JOSE MANUEL JIMENEZ MARTINEZ","curp":"JIMM651030HJCMRN07","edad":61,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3331791670","fuente":"2026"},{"nss":"54846532924","nombre":"ROLANDO RAMIREZ RAMIREZ","curp":"RARR651030HJCMML05","edad":61,"municipio":"San Pedro Tlaquepaque","whatsapp":"3337229032","fuente":"2026"},{"nss":"4886550047","nombre":"CRISPIN CASTRO MARTINEZ","curp":"CAMC651213HJCSRR00","edad":61,"municipio":"Guadalajara","whatsapp":"3311052461","fuente":"2026"},{"nss":"4745755076","nombre":"SILVIA VAZQUEZ PARRAL","curp":"VAPS571103MJCZRL06","edad":68,"municipio":"Zapopan","whatsapp":"3314233280","fuente":"2025"},{"nss":"54815629867","nombre":"SALVADOR GOMEZ GUTIERREZ","curp":"GOGS561114HJCMTL05","edad":68,"municipio":"Guadalajara","whatsapp":"3312545682","fuente":"2025"},{"nss":"54816512625","nombre":"MARTIN GOMEZ MARISCAL","curp":"GOMM650707HJCMRR09","edad":61,"municipio":"Zapopan","whatsapp":"3310633340","fuente":"2026"},{"nss":"54786048014","nombre":"PEDRO AYON CONTRERAS","curp":"AOCP600629HJCYND05","edad":64,"municipio":"Tonalá","whatsapp":"3315743654","fuente":"2025"},{"nss":"4856649688","nombre":"MARTIN GONZALEZ ROBLES","curp":"GORM640406HJCNBR01","edad":60,"municipio":"Tonalá","whatsapp":"3336029373","fuente":"2025"},{"nss":"54826595651","nombre":"MA REBECA CORONA ARANDA","curp":"COAR650705MMNRRB05","edad":61,"municipio":"Guadalajara","whatsapp":"3312838954","fuente":"2026"},{"nss":"4755700061","nombre":"SOCORRO ALCARAS OCHOHA","curp":"AAOS580419MJCLCC14","edad":67,"municipio":"San Pedro Tlaquepaque","whatsapp":"3317423302","fuente":"2025"},{"nss":"4856516408","nombre":"MA. LORENA SANCHEZ RETOLAZA","curp":"SARL650914MJCNTR01","edad":61,"municipio":"Zapopan","whatsapp":"3331051253","fuente":"2026"},{"nss":"21816525675","nombre":"JESUS FLORENCIO GARCIA LARA","curp":"GALJ651015HCMRRS04","edad":61,"municipio":"Guadalajara","whatsapp":"3338433101","fuente":"2026"},{"nss":"4886534967","nombre":"RICARDO PALACIO SERRA","curp":"PASR650718HDFLRC00","edad":61,"municipio":"Tlajomulco de Zúñiga","whatsapp":"3332014229","fuente":"2026"},{"nss":"56956520128","nombre":"YOLANDA DE SANTIAGO GUTIERREZ","curp":"SAGY651120MJCNTL06","edad":61,"municipio":"Guadalajara","whatsapp":"3310656733","fuente":"2026"},{"nss":"54796318639","nombre":"ARMANDO RODRIGUEZ RIVERA","curp":"RORA631018HJCDVR08","edad":61,"municipio":"Tonalá","whatsapp":"3310955019","fuente":"2025"},{"nss":"4856503588","nombre":"CARLOS DUARTE BARAJAS","curp":"DUBC651104HMNRRR01","edad":61,"municipio":"Tonalá","whatsapp":"3311355750","fuente":"2026"},{"nss":"54836564564","nombre":"ACENCION MORAN RAMIREZ","curp":"MORA650815HSLRMC00","edad":61,"municipio":"Zapopan","whatsapp":"3314168971","fuente":"2026"},{"nss":"54786035680","nombre":"EVANGELINA ACEVES MENDOZA","curp":"AEME600422MJCCNV05","edad":65,"municipio":"Guadalajara","whatsapp":"3339041797","fuente":"2025"}];
+const ASESOR = "Nancy Ramos";
+const ASESOR_TEL = "8113144902";
+const WA_NANCY = "528180888606";
+const LS = "cwvl_jal2_nancy_v1";
+const MSGS = {
+  1: '[JAL2] 👋 ¡Buen día! Soy *Nancy Ramos*, consultora certificada de *CWVL Consultoría* con *Banco Inbursa* ✅\n\n📣 Me da mucho gusto saludarle. Su programa *"Tu Préstamo Fácil y Seguro del IMSS"* ya le permite recibir hasta *$600,000* a cuenta de su pensión 🏦\n\nEl mejor banco maneja una tasa desde *22.39% anual* 📊\n\n📋 El motivo de este mensaje es preguntarle si me permite enviarle una *cotización personalizada* sin compromiso 💰\n\n_Ejemplo:_ Si solicita *$100,000* puede pagar mensualidades desde *$2,992* ✨\n\nQuedo atenta a su respuesta 🙌',
+  2: '[JAL2] Estimada/o Pensionada/o 👋 Quedó pendiente saber si desea hacer uso de su *"Préstamo Fácil y Seguro del IMSS"*. Le recuerdo que soy *Nancy Ramos*, consultora certificada de *CWVL Consultoría* y trabajamos con las mejores marcas del convenio, por lo que su trámite es: ✅ Seguro ✅ Acompañado y asesorado en todo momento ✅ Con actualización constante sobre mejores opciones de crédito. Contamos con más de *8 años de experiencia en el programa*, 12 años distribuyendo productos financieros, más de *500 reseñas positivas en Google* y una comunidad de más de *96,000 seguidores en Facebook*. Somos una empresa sólida, honesta y comprometida con nuestros clientes. 🤝',
+  3: '[JAL2] Estimada/o Pensionada/o 👋\n\nComo le comenté, soy *Nancy Ramos*, consultora certificada de *CWVL Consultoría* con *Banco Inbursa* ✅\n\nLe comparto su *cotización personalizada* basada en su pensión 📋\n\n🏦 *Banco Inbursa* — el mejor del mercado para pensionados IMSS\n💰 *Tasa desde 22.39% anual* (la más baja del mercado)\n⏳ *Depósito en aproximadamente 72 horas hábiles*\n🔒 El dinero llega directo a la cuenta donde recibe su pensión\n\nEsta cotización es *solo para usted* y *válida por los próximos días* ⏰\n\n¿Le gustaría que le explique los detalles por llamada o aquí mismo por WhatsApp? Con gusto resuelvo cualquier duda 🤝\n\nQuedo atenta a su respuesta 🙌',
+  4: '[JAL2] *Estimada/o Pensionada/o* 👋 Soy *Nancy Ramos*, su consultora de *CWVL Consultoría*. Le comparto los documentos necesarios para integrar su expediente en *Banco Inbursa* y así poder recibir su préstamo en aproximadamente *72 horas hábiles* ⏳\n\n📋 *Documentos necesarios:*\n✅ INE vigente\n✅ Comprobante de domicilio\n\nUna vez que reciba su documentación, *yo personalmente la valido con el banco* y le genero su *folio (TYS)*. *Después le agendo su cita para la toma de biométricos en sucursal y le acompaño en el proceso* 🤝\n\nPosteriormente, el dinero se deposita directamente en la cuenta donde usted recibe su pensión 💰🏦\n\n*Todo el trámite es seguro y verificable directamente con Banco Inbursa* 🤝 Yo lo acompaño durante todo el proceso para brindarle seguridad y confianza. Quedo atenta para apoyarle en cualquier duda.'
+};
+
+let state = {};
+try { state = JSON.parse(localStorage.getItem(LS) || "{}"); } catch(e) { state = {}; }
+
+function getData(nss) {
+  if (!state[nss]) state[nss] = { s: '', h: '', notas: [], sel: false };
+  if (!state[nss].notas) state[nss].notas = [];
+  return state[nss];
+}
+
+function save() {
+  try { localStorage.setItem(LS, JSON.stringify(state)); } catch(e) {}
+}
+
+function hoyStr() {
+  const d = new Date();
+  return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
+}
+
+function formatTel(t) {
+  // 3330107679 → 333 010 7679
+  if (!t || t.length !== 10) return t;
+  return t.substr(0,3)+' '+t.substr(3,3)+' '+t.substr(6,4);
+}
+
+let VISIBLES = [];
+
+function fil() {
+  const bq = document.getElementById('bq').value.toLowerCase();
+  const fst = document.getElementById('fst').value;
+  const fhj = document.getElementById('fhj').value;
+  const fmu = document.getElementById('fmu').value;
+  
+  VISIBLES = LEADS.filter(l => {
+    const d = getData(l.nss);
+    if (bq && !(l.nombre.toLowerCase().includes(bq) || l.nss.includes(bq))) return false;
+    if (fst && d.s !== fst) return false;
+    if (fhj === 'si' && d.h !== 'si') return false;
+    if (fhj === 'no' && d.h === 'si') return false;
+    if (fmu && l.municipio !== fmu) return false;
+    return true;
+  });
+  
+  render();
+  updateSelCount();
+}
+
+const STATUS_LBL = {
+  frio: '🔵 Frío',
+  tibio: '🟡 Tibio',
+  caliente: '🔴 Caliente',
+  propuesta: '🟣 Propuesta',
+  cerrado: '🟢 Cerrado'
+};
+
+function render() {
+  const c = document.getElementById('leads');
+  if (VISIBLES.length === 0) {
+    c.innerHTML = '<div class="no-leads">No hay leads que coincidan con los filtros</div>';
+    return;
+  }
+  let h = '';
+  for (let i = 0; i < VISIBLES.length; i++) {
+    const l = VISIBLES[i];
+    const d = getData(l.nss);
+    const sel = d.sel ? 'checked' : '';
+    
+    let pills = '';
+    Object.keys(STATUS_LBL).forEach(k => {
+      const on = d.s === k ? ' on-'+k : '';
+      pills += '<button class="pill'+on+'" onclick="setStatus(\''+l.nss+'\',\''+k+'\')">'+STATUS_LBL[k]+'</button>';
+    });
+    
+    const hojaTag = d.h === 'si' 
+      ? '<span class="hoja-tag si">✅ Hoja amarilla enviada</span>'
+      : '<span class="hoja-tag">⏳ Hoja amarilla pendiente</span>';
+    
+    const notas = d.notas || [];
+    let notasHtml = '';
+    if (notas.length === 0) {
+      notasHtml = '<div class="empty">Sin notas aún. Agrega la primera abajo 👇</div>';
+    } else {
+      notas.forEach((n, ni) => {
+        notasHtml += '<div class="nota-item">'
+          + '<div class="nota-fecha">📅 '+n.fecha+'</div>'
+          + '<div class="nota-texto">'+escapeHtml(n.texto)+'</div>'
+          + '<button class="nota-del" onclick="delNota(\''+l.nss+'\','+ni+')" title="Borrar nota">🗑️</button>'
+          + '</div>';
+      });
+    }
+    
+    h += '<div class="lead">'
+      + '<div class="lead-head">'
+      +   '<div class="chk"><input type="checkbox" '+sel+' onchange="toggleSel(\''+l.nss+'\',this.checked)"></div>'
+      +   '<div class="lead-info">'
+      +     '<div class="lead-nombre">'+escapeHtml(l.nombre)+'</div>'
+      +     '<div class="lead-meta">NSS: '+l.nss+' · CURP: '+l.curp+'<br>'
+      +       l.edad+' años' + (l.municipio?' · '+l.municipio:'') + '</div>'
+      +     '<div class="lead-tel"><span class="ico">📱</span> '+formatTel(l.whatsapp)+'</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="acciones">'
+      +   '<button class="bwa" onclick="abrirWA(\''+l.whatsapp+'\')"><span class="ico-btn">💬</span>WhatsApp</button>'
+      +   '<button class="bhj" onclick="hojaAmarilla(\''+l.nss+'\')"><span class="ico-btn">📄</span>Hoja amarilla</button>'
+      +   '<button class="bnt" onclick="toggleNotas(\''+l.nss+'\')"><span class="ico-btn">📝</span>Notas ('+notas.length+')</button>'
+      + '</div>'
+      + '<div class="status-row">'+pills+'</div>'
+      + hojaTag
+      + '<div class="notas-box" id="nb_'+l.nss+'">'
+      +   notasHtml
+      +   '<div class="nota-add">'
+      +     '<textarea id="nt_'+l.nss+'" placeholder="Escribe nota nueva (fecha automática)..."></textarea>'
+      +     '<button onclick="addNota(\''+l.nss+'\')">➕</button>'
+      +   '</div>'
+      + '</div>'
+      + '</div>';
+  }
+  c.innerHTML = h;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function setStatus(nss, v) {
+  const d = getData(nss);
+  d.s = (d.s === v) ? '' : v;  // Toggle: si ya está prendido, apagar
+  save();
+  fil();
+}
+
+function toggleNotas(nss) {
+  const el = document.getElementById('nb_'+nss);
+  el.classList.toggle('show');
+}
+
+function addNota(nss) {
+  const ta = document.getElementById('nt_'+nss);
+  const txt = ta.value.trim();
+  if (!txt) { alert('Escribe algo en la nota primero'); return; }
+  const d = getData(nss);
+  d.notas.push({ fecha: hoyStr(), texto: txt });
+  save();
+  ta.value = '';
+  fil();
+  setTimeout(() => {
+    const el = document.getElementById('nb_'+nss);
+    if (el) el.classList.add('show');
+  }, 50);
+}
+
+function delNota(nss, idx) {
+  if (!confirm('¿Borrar esta nota?')) return;
+  const d = getData(nss);
+  d.notas.splice(idx, 1);
+  save();
+  fil();
+  setTimeout(() => {
+    const el = document.getElementById('nb_'+nss);
+    if (el) el.classList.add('show');
+  }, 50);
+}
+
+function abrirWA(num) {
+  window.open('https://wa.me/52'+num+'?text='+encodeURIComponent('[JAL2] '), '_blank');
+}
+
+function hojaAmarilla(nss) {
+  const lead = LEADS.find(l => l.nss === nss);
+  if (!lead) return;
+  const msg = '🟡 SOLICITUD HOJA AMARILLA [JAL2]\n\n'
+    + '📌 IMSS: '+lead.nss+'\n'
+    + '📌 CURP: '+lead.curp+'\n'
+    + '👤 Nombre: '+lead.nombre+'\n'
+    + '📱 Cell: '+lead.whatsapp+'\n\n'
+    + 'Asesor: '+ASESOR;
+  getData(nss).h = 'si';
+  save();
+  fil();
+  window.open('https://wa.me/'+WA_NANCY+'?text='+encodeURIComponent(msg), '_blank');
+}
+
+function toggleSel(nss, val) {
+  getData(nss).sel = val;
+  save();
+  updateSelCount();
+}
+
+function selAll() {
+  VISIBLES.forEach(l => { getData(l.nss).sel = true; });
+  save();
+  fil();
+}
+
+function selNone() {
+  VISIBLES.forEach(l => { getData(l.nss).sel = false; });
+  save();
+  fil();
+}
+
+function updateSelCount() {
+  let n = 0;
+  LEADS.forEach(l => { if (getData(l.nss).sel) n++; });
+  const e = document.getElementById('selCount');
+  if (e) e.textContent = n;
+}
+
+function exportCadih() {
+  const seleccionados = LEADS.filter(l => getData(l.nss).sel);
+  if (seleccionados.length === 0) {
+    alert('No hay leads seleccionados. Marca el ☑️ a los que quieres exportar.');
+    return;
+  }
+  const data = seleccionados.map(l => ({
+    'Nombre': l.nombre,
+    'WhatsApp': '52'+l.whatsapp
+  }));
+  try {
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws['!cols'] = [{ wch: 40 }, { wch: 18 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Lista CadiH');
+    const fecha = hoyStr().replace(/\//g, '-');
+    XLSX.writeFile(wb, 'CadiH_JAL2_Nancy_'+fecha+'_'+seleccionados.length+'_leads.xlsx');
+  } catch(err) {
+    alert('Error generando Excel: '+err.message);
+  }
+}
+
+function reporte() {
+  const stats = { total: LEADS.length, frio: 0, tibio: 0, caliente: 0, propuesta: 0, cerrado: 0, hojas: 0, notas: 0 };
+  LEADS.forEach(l => {
+    const d = getData(l.nss);
+    if (stats.hasOwnProperty(d.s)) stats[d.s]++;
+    if (d.h === 'si') stats.hojas++;
+    if (d.notas && d.notas.length > 0) stats.notas++;
+  });
+  const msg = '📊 REPORTE CRM JAL2 — '+ASESOR+'\n'+hoyStr()+'\n\n'
+    + '👥 Total leads: '+stats.total+'\n'
+    + '🔵 Fríos: '+stats.frio+'\n'
+    + '🟡 Tibios: '+stats.tibio+'\n'
+    + '🔴 Calientes: '+stats.caliente+'\n'
+    + '🟣 Propuesta: '+stats.propuesta+'\n'
+    + '🟢 Cerrados: '+stats.cerrado+'\n'
+    + '📄 Hojas amarillas: '+stats.hojas+'\n'
+    + '📝 Con notas: '+stats.notas;
+  window.open('https://wa.me/'+WA_NANCY+'?text='+encodeURIComponent(msg), '_blank');
+}
+
+function copiar(n) {
+  const t = MSGS[n];
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(() => {
+      mostrarModal('✅ Mensaje copiado','Ya puedes pegarlo en WhatsApp');
+    }).catch(() => { fallbackCopy(t); });
+  } else { fallbackCopy(t); }
+}
+
+function fallbackCopy(t) {
+  const ta = document.createElement('textarea');
+  ta.value = t;
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); mostrarModal('✅ Mensaje copiado','Ya puedes pegarlo en WhatsApp'); }
+  catch(e) { mostrarModal('⚠️ No se pudo copiar','Selecciona el texto y cópialo manualmente'); }
+  document.body.removeChild(ta);
+}
+
+function mostrarModal(t, b) {
+  document.getElementById('mTitle').textContent = t;
+  document.getElementById('mBody').textContent = b;
+  document.getElementById('modal').classList.add('show');
+}
+
+function cerrarModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+function limpia() {
+  document.getElementById('bq').value = '';
+  document.getElementById('fst').value = '';
+  document.getElementById('fhj').value = '';
+  document.getElementById('fmu').value = '';
+  fil();
+}
+
+function tab(n) {
+  document.getElementById('p0').style.display = n === 0 ? 'block' : 'none';
+  document.getElementById('p1').style.display = n === 1 ? 'block' : 'none';
+  document.getElementById('t0').className = 'tab' + (n === 0 ? ' on' : '');
+  document.getElementById('t1').className = 'tab' + (n === 1 ? ' on' : '');
+}
+
+document.getElementById('m1').textContent = MSGS[1];
+document.getElementById('m2').textContent = MSGS[2];
+document.getElementById('m3').textContent = MSGS[3];
+document.getElementById('m4').textContent = MSGS[4];
+
+fil();
+} catch(ex) {
+  document.getElementById('errd').innerHTML = '<div class="err">Error: '+ex.message+'</div>';
+  console.error(ex);
+}
+</script>
+</body>
+</html>
